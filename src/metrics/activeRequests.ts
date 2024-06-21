@@ -7,27 +7,38 @@ const activeRequestGauge = new client.Gauge({
     help:'Number of active requests'
 });
 
+const httpRequestDuration = new client.Histogram({
+    name:'http_request_duration_ms',
+    help:'Duration of HTTP requests in ms', 
+    labelNames:['method', 'route', 'status_code'],
+    buckets:[0.1, 0.5, 5, 10 , 15, 100, 200, 400, 1000, 5000]
+});
+
 export const activeRequestGaugeMiddleWare = (req:Request, res:Response, next: NextFunction) => {
-    console.log('in');
-    
+  
     const startTime = Date.now();
     activeRequestGauge.inc();
 
     res.on('close', () => {
         const endTime = Date.now();
-        console.log(`The request took ${endTime - startTime}ms`);
+        const duration = endTime - startTime;
+
+        console.log(`The request took ${duration}ms`);
 
         requestCounter.inc({
             method:req.method,
             route:req.route ? req.route.path : req.path,
             status_code: res.statusCode
         });
-        console.log('dec');
-        
+
+        httpRequestDuration.observe({
+            method: req.method,
+            route: req.route ? req.route.path : req.path,
+            status_code: res.statusCode
+        }, duration);
+    
         activeRequestGauge.dec();
     });
-    console.log('next');
-    
     next();
 };
 

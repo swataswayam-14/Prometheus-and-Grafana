@@ -7,8 +7,6 @@ import { activeRequestGaugeMiddleWare } from "./metrics/activeRequests";
 const app = express();
 
 app.use(express.json());
-//app.use(middleware);
-//app.use(requestCountMiddleWare);
 app.use(activeRequestGaugeMiddleWare);
 
 app.get("/user", async(req: Request,res: Response)=>{
